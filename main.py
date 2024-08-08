@@ -1,4 +1,5 @@
 # This is a sample Python script.
+import scripts.scrapper
 from config import settings
 
 
@@ -16,4 +17,6 @@ def print_hi(name):
 if __name__ == '__main__':
     print_hi('PyCharm')
 
+    data = scripts.scrapper.get_data()
+    print(data)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
