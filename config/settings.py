@@ -32,6 +32,8 @@ LOGGING_CONFIG = {
     }
 }
 
+WEB_BASE_URL = 'https://loeu.opsu.gob.ve/oferta-academica/?dep_admin=P%C3%9ABLICA&programa='
+
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
