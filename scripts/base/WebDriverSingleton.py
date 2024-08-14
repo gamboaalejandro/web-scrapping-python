@@ -18,6 +18,6 @@ class WebDriverSingleton:
     @classmethod
     def close_instance(cls):
         if cls._instance:
-            cls._instance.close()
             cls._instance.quit()
+            cls._instance.close()
             cls._instance = None

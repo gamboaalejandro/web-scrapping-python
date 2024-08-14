@@ -1,6 +1,6 @@
 # This is a sample Python script.
 from config import settings
-from scripts.scrapper import ChromeScrapper, UrlContentExtractionStrategy
+from scripts.scrapper import ChromeScrapper, UrlContentExtractionStrategy, ExtractDivClassStrategy
 
 
 # Press Ctrl+F5 to execute it or replace it with your code.
@@ -16,7 +16,7 @@ def print_hi(name):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     print_hi('PyCharm')
-    scrapper = ChromeScrapper(UrlContentExtractionStrategy(False))
+    scrapper = ChromeScrapper(UrlContentExtractionStrategy(ExtractDivClassStrategy(False)))
 
     data = scrapper.scraper(settings.WEB_BASE_URL_PUBLIC)
 

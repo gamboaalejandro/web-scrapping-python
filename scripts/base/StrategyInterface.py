@@ -7,5 +7,5 @@ class ExtractStrategy(ABC):
         self.another_strategy = strategy
 
     @abstractmethod
-    def extrac_content(self, driver):
+    def extrac_content(self, data):
         pass
