@@ -1,5 +1,6 @@
 from setuptools import setup, find_packages
 
+
 # Lee el contenido del archivo README.md
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -29,6 +30,7 @@ setup(
         "lxml>=4.6.2",
         "pyquery>=1.4.0",
         "fake-useragent>=0.1.11",
+        "psycopg2>=2.9.9",
     ],
     entry_points={  # Puntos de entrada para crear scripts ejecutables
         'console_scripts': [

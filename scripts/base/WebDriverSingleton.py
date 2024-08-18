@@ -11,7 +11,11 @@ class WebDriverSingleton:
     def get_instance(cls):
         if cls._instance is None:
             options = Options()
-            options.headless = True  # Ejecutar el navegador en segundo plano sin GUI (opcional)
+            options.add_argument("headless")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--window-size=1920,1080")  # Establecer tamaño de ventana para asegurar que el modo headless funcione
+            options.add_argument("--log-level=3")  # Minimizar los logs del navegador
             cls._instance = webdriver.Chrome(service=Service(ChromeDriverManager().install(), options=options))
         return cls._instance
 

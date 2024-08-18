@@ -1,26 +1,20 @@
-from abc import ABC
-
-import config.settings
-# code to get data from url
-from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 
-from selenium import webdriver
-
+from data.models.database import DatabaseConnection
 from scripts.base.StrategyInterface import ExtractStrategy
 from scripts.base.WebDriverSingleton import WebDriverSingleton
 from scripts.base.asbtract_scrapper import ScrapperUrlInterface
+from config import settings
 
 driver = WebDriverSingleton.get_instance()
+db = DatabaseConnection()
+session = db.get_session()
 
 
 class ChromeScrapper(ScrapperUrlInterface):
     html_to_scrap = ''
 
-    def __init__(self, extraction_strategy: ExtractStrategy, headless=True):
+    def __init__(self, extraction_strategy: ExtractStrategy):
         super().__init__(extraction_strategy)
 
     def scraper(self, url):
@@ -46,46 +40,114 @@ class UrlContentExtractionStrategy(ExtractStrategy):
 
     def extrac_content(self, data):
         a_labels = []
+        #Could be any html element to explors Url (all page)
         container = driver.find_element(By.ID, 'list-tab-pane')
-        miclase = self.another_strategy.extrac_content(container)
-        print(f"esta es mi clase {miclase}")
+        #miclase = self.another_strategy.extrac_content(container)
         links = container.find_elements(By.TAG_NAME, 'a')
-        # SE REQUIERE CREAR ALGUNA ESTRATEGIA O ABSTRACCION QUE MANEJE LOS DISTINTTOS ELEMENTOS EN EL HTML
-        for link in links:
-            href = link.get_attribute('href')
-            text = link.text
-            a_labels.append(href)
-            print(f"Texto: {text} - URL: {href}")
-
-        if not self.another_strategy:
-            return data
-        self.another_strategy.extrac_content(data)
+        # SE REQUIERE CREAR ALGUNA ESTRATEGIA O ABSTRACCION QUE MANEJE LOS DISTINTOS ELEMENTOS EN EL HTML
+        url = self.extract_url_content(links, 'detalle-area-conocimiento')
+        print(url)
 
         pass
 
 
-class ExtractDivClassStrategy(ExtractStrategy):
+class ExtractContentFromALabelStrategy(ExtractStrategy):
 
     def extrac_content(self, data):
-        print("hola")
-        print(data.find_element(By.CLASS_NAME, "col-1 text-uppercase fs-6 fw-bold").text)
-        clase = self.get_text_and_a_label(data, 'IEU')
-        # for c in clase:
-        #     class_name = c.get_attribute("class")
-        #     div_elementor = c.find_element(By.CLASS_NAME, class_name)
-        #     print(div_elementor.text)
-        return clase
+        driver.get(data)
+        links = driver.find_elements(By.TAG_NAME, 'a')
+        url = self.extract_url_content(links, 'oferta-academica')
+        return self.another_strategy.extrac_content(url)
+        # links = driver.find_elements(By.TAG_NAME, 'a')
+        # for link in links:
+        #
+        #     href = link.get_attribute('href')
+        #     if 'oferta-academica' in (href):
+        #         print("encontre oferta academica")
+        #         self.another_strategy.extrac_content(content)
+        #     text = link.text
+        #     print(f"Texto: {text} - URL: {href}")
+        #
+        # print("Extract dIVC")//
 
-    def get_text_and_a_label(self, divs, target_text):
 
-        #if target_text in divs.text:
-        #    return divs
+class ExtractKnowledgeAreaStrategy(ExtractStrategy):
 
-        child_divs = divs.find_elements(By.TAG_NAME, "div")
+    def extrac_content(self, data):
+        #DATA LLEGA COMO EL HTML
+        """
+        LOGICA PARA EXTRAER LA INFORMACION DEL AREA DE CONOCIMIENTO
+        """
+        name_area = driver.find_element(By.CSS_SELECTOR, 'p.text-primary.text-start.fw-light.fs-5').text
 
-        for div in child_divs:
-            found = self.get_text_and_a_label(div, target_text)
-            if found:
-                return found
+        settings.logger.info('Logging configured')
+        p_label = driver.find_element(By.CSS_SELECTOR, 'p.text-normal.text-justify.fs-6.fw-light.lh-lg')
+        all_text_split = p_label.text.split('\n')
+        description_text = p_label.text.split('\n')[0]
+        from data.models.knowledge_area import KnowledgeAreas
+        if session.query(KnowledgeAreas).filter(KnowledgeAreas.name == name_area).first():
+            return
+        knowledge_area = KnowledgeAreas(
+            name=name_area,
+            description=description_text
+        )
+        session.add(knowledge_area)
+        for p in all_text_split:
+            if '-' in p:
+                from data.models.knowledge_area import SkillsForKnowledgeAreas
+                skill = SkillsForKnowledgeAreas(
+                    name=p,
+                    knowledge_area_id=knowledge_area.id,
+                    knowledge_area=knowledge_area
+                )
+                session.add(skill)
 
-        return None
+        session.commit()
+        """
+        FIN LOGICA PARA EXTRAER LA INFORMACION DEL AREA DE CONOCIMIENTO
+        """
+        if self.another_strategy:
+            self.another_strategy.extrac_content(data)
+
+
+class ExtractAcademicOfferStrategy(ExtractStrategy):
+
+    def extrac_content(self, data):
+
+        """
+        LOGICA PARA EXTRAER LA INFORMACION DE LA OFERTA ACADEMICA
+        """
+        area = False
+        find_detail_knowledge_area_flag = False
+        driver.get(data)
+        container = driver.find_element(By.ID, 'list-tab-pane')
+        links = container.find_elements(By.TAG_NAME, 'a')
+        for links in links:
+            href = links.get_attribute('href')
+            if 'detalle_area_conocimiento' in href and not find_detail_knowledge_area_flag:
+                find_detail_knowledge_area_flag = True
+                text = links.text
+                from data.models.knowledge_area import KnowledgeAreas
+                area = session.query(KnowledgeAreas).filter(KnowledgeAreas.name == text).first
+            if 'detalle-programa' in href:
+                text = links.text.split(' - ')[1]
+                from data.models.knowledge_area import AcademicPrograms
+                academic_area_exist = session.query(AcademicPrograms).filter(AcademicPrograms.name == text).first
+                if academic_area_exist:
+                    continue
+                program = AcademicPrograms(
+                    name=text,
+                    KnowledgeAreas_id=area.id,
+                    knowledge_area=area
+                )
+                session.add(program)
+
+                print(f"Texto: {text} - URL: {href}")
+        """
+        FIN LOGICA PARA EXTRAER LA INFORMACION DE LA OFERTA ACADEMICA
+        """
+        session.commit()
+        if self.another_strategy:
+            self.another_strategy.extrac_content(data)
+
+        pass
