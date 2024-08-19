@@ -40,9 +40,9 @@ class UrlContentExtractionStrategy(ExtractStrategy):
 
     def extrac_content(self, data):
         a_labels = []
-        #Could be any html element to explors Url (all page)
+        # Could be any html element to explors Url (all page)
         container = driver.find_element(By.ID, 'list-tab-pane')
-        #miclase = self.another_strategy.extrac_content(container)
+        # miclase = self.another_strategy.extrac_content(container)
         hrefs = [link.get_attribute('href') for link in container.find_elements(By.TAG_NAME, 'a')]
         # SE REQUIERE CREAR ALGUNA ESTRATEGIA O ABSTRACCION QUE MANEJE LOS DISTINTOS ELEMENTOS EN EL HTML
         url = self.extract_url_content(hrefs, 'detalle-area-conocimiento')
@@ -74,7 +74,7 @@ class ExtractContentFromALabelStrategy(ExtractStrategy):
 class ExtractKnowledgeAreaStrategy(ExtractStrategy):
 
     def extrac_content(self, data):
-        #DATA LLEGA COMO EL HTML
+        # DATA LLEGA COMO EL HTML
         """
         LOGICA PARA EXTRAER LA INFORMACION DEL AREA DE CONOCIMIENTO
         """
@@ -82,9 +82,8 @@ class ExtractKnowledgeAreaStrategy(ExtractStrategy):
 
         settings.logger.info('Logging configured')
         p_label = driver.find_element(By.CSS_SELECTOR, 'p.text-normal.text-justify.fs-6.fw-light.lh-lg')
-        all_text_split = p_label.text.split('\n')
+        all_text_split = self.extract_ul_content() if self.extract_ul_content() else p_label.text.split('\n')
         description_text = p_label.text.split('\n')[0]
-        '''CASO BORDE DE INGENIERIA ARQUITECTURA Y TECNOLOGIA DONDE HAY UL'''
         from data.models.knowledge_area import KnowledgeAreas
         if session.query(KnowledgeAreas).filter(KnowledgeAreas.name == name_area).first():
             return
@@ -109,6 +108,15 @@ class ExtractKnowledgeAreaStrategy(ExtractStrategy):
         """
         if self.another_strategy:
             self.another_strategy.extrac_content(data)
+
+    def extract_ul_content(self):
+
+        ul_tags = driver.find_element(By.CSS_SELECTOR, 'div.col-10.p-6').find_elements(By.TAG_NAME, 'li')
+        for ul in ul_tags:
+            print(ul.text)
+        if ul_tags:
+            return ul_tags
+        return []
 
 
 class ExtractAcademicOfferStrategy(ExtractStrategy):
