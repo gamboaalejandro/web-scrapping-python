@@ -43,9 +43,9 @@ class UrlContentExtractionStrategy(ExtractStrategy):
         #Could be any html element to explors Url (all page)
         container = driver.find_element(By.ID, 'list-tab-pane')
         #miclase = self.another_strategy.extrac_content(container)
-        links = container.find_elements(By.TAG_NAME, 'a')
+        hrefs = [link.get_attribute('href') for link in container.find_elements(By.TAG_NAME, 'a')]
         # SE REQUIERE CREAR ALGUNA ESTRATEGIA O ABSTRACCION QUE MANEJE LOS DISTINTOS ELEMENTOS EN EL HTML
-        url = self.extract_url_content(links, 'detalle-area-conocimiento')
+        url = self.extract_url_content(hrefs, 'detalle-area-conocimiento')
         print(url)
 
         pass
@@ -55,8 +55,8 @@ class ExtractContentFromALabelStrategy(ExtractStrategy):
 
     def extrac_content(self, data):
         driver.get(data)
-        links = driver.find_elements(By.TAG_NAME, 'a')
-        url = self.extract_url_content(links, 'oferta-academica')
+        hrefs = [link.get_attribute('href') for link in driver.find_elements(By.TAG_NAME, 'a')]
+        url = self.extract_url_content(hrefs, 'oferta-academica')
         return self.another_strategy.extrac_content(url)
         # links = driver.find_elements(By.TAG_NAME, 'a')
         # for link in links:
@@ -84,6 +84,7 @@ class ExtractKnowledgeAreaStrategy(ExtractStrategy):
         p_label = driver.find_element(By.CSS_SELECTOR, 'p.text-normal.text-justify.fs-6.fw-light.lh-lg')
         all_text_split = p_label.text.split('\n')
         description_text = p_label.text.split('\n')[0]
+        '''CASO BORDE DE INGENIERIA ARQUITECTURA Y TECNOLOGIA DONDE HAY UL'''
         from data.models.knowledge_area import KnowledgeAreas
         if session.query(KnowledgeAreas).filter(KnowledgeAreas.name == name_area).first():
             return
