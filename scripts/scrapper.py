@@ -110,12 +110,13 @@ class ExtractKnowledgeAreaStrategy(ExtractStrategy):
             self.another_strategy.extrac_content(data)
 
     def extract_ul_content(self):
-
+        li_text = []
         ul_tags = driver.find_element(By.CSS_SELECTOR, 'div.col-10.p-6').find_elements(By.TAG_NAME, 'li')
         for ul in ul_tags:
+            li_text.append(ul.text)
             print(ul.text)
-        if ul_tags:
-            return ul_tags
+        if li_text:
+            return li_text
         return []
 
 
