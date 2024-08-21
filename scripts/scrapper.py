@@ -57,7 +57,7 @@ class ExtractContentFromALabelStrategy(ExtractStrategy):
         driver.get(data)
         hrefs = [link.get_attribute('href') for link in driver.find_elements(By.TAG_NAME, 'a')]
         url = self.extract_url_content(hrefs, 'oferta-academica')
-        return self.another_strategy.extrac_content(url)
+        # return self.another_strategy.extrac_content(url)
         # links = driver.find_elements(By.TAG_NAME, 'a')
         # for link in links:
         #
@@ -78,7 +78,8 @@ class ExtractKnowledgeAreaStrategy(ExtractStrategy):
         """
         LOGICA PARA EXTRAER LA INFORMACION DEL AREA DE CONOCIMIENTO
         """
-        name_area = driver.find_element(By.CSS_SELECTOR, 'p.text-primary.text-start.fw-light.fs-5').text
+        name_area = (driver.find_element(By.CSS_SELECTOR, 'p.text-primary.text-start.fw-light.fs-5')
+                     .text.replace('(ver oferta)', '').strip())
 
         settings.logger.info('Logging configured')
         p_label = driver.find_element(By.CSS_SELECTOR, 'p.text-normal.text-justify.fs-6.fw-light.lh-lg')
@@ -134,15 +135,17 @@ class ExtractAcademicOfferStrategy(ExtractStrategy):
         links = container.find_elements(By.TAG_NAME, 'a')
         for links in links:
             href = links.get_attribute('href')
-            if 'detalle_area_conocimiento' in href and not find_detail_knowledge_area_flag:
+            if 'detalle-area-conocimiento' in href and not find_detail_knowledge_area_flag:
                 find_detail_knowledge_area_flag = True
                 text = links.text
                 from data.models.knowledge_area import KnowledgeAreas
-                area = session.query(KnowledgeAreas).filter(KnowledgeAreas.name == text).first
-            if 'detalle-programa' in href:
+                area = session.query(KnowledgeAreas).filter(KnowledgeAreas.name == text).first()
+                if not area:
+                    continue
+            if 'detalle-programa' in href and find_detail_knowledge_area_flag:
                 text = links.text.split(' - ')[1]
                 from data.models.knowledge_area import AcademicPrograms
-                academic_area_exist = session.query(AcademicPrograms).filter(AcademicPrograms.name == text).first
+                academic_area_exist = session.query(AcademicPrograms).filter(AcademicPrograms.name == text).first()
                 if academic_area_exist:
                     continue
                 program = AcademicPrograms(
