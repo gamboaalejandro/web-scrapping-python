@@ -15,11 +15,11 @@ class ExtractStrategy(ABC):
         pass
 
     def extract_url_content(self, links, url):
-        for link in links:
+        for idx, link in enumerate(links):
             if url in link:
                 content = self.another_strategy.extrac_content(link)
                 if content is None:
                     continue
                 return link
-        return "no se encontro la ruta"
+        return
 

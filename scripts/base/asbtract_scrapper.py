@@ -9,7 +9,6 @@ class ScrapperUrlInterface(ABC):
     def scraper(self, url):
         self.fetch_page(url)
         self.extract_data()
-        self.process_data()
         pass
 
     @abstractmethod
@@ -20,6 +19,3 @@ class ScrapperUrlInterface(ABC):
     def extract_data(self):
         pass
 
-    @abstractmethod
-    def process_data(self):
-        pass

@@ -1,6 +1,8 @@
+import re
 from selenium.webdriver.common.by import By
 
 from data.models.database import DatabaseConnection
+from data.models.university_institute import university_knowledge_association, UniversityInstitute
 from scripts.base.StrategyInterface import ExtractStrategy
 from scripts.base.WebDriverSingleton import WebDriverSingleton
 from scripts.base.asbtract_scrapper import ScrapperUrlInterface
@@ -32,9 +34,6 @@ class ChromeScrapper(ScrapperUrlInterface):
     def extract_data(self):
         return self.extraction_strategy.extrac_content(self.html_to_scrap)
 
-    def process_data(self):
-        pass
-
 
 class UrlContentExtractionStrategy(ExtractStrategy):
 
@@ -57,18 +56,7 @@ class ExtractContentFromALabelStrategy(ExtractStrategy):
         driver.get(data)
         hrefs = [link.get_attribute('href') for link in driver.find_elements(By.TAG_NAME, 'a')]
         url = self.extract_url_content(hrefs, 'oferta-academica')
-        # return self.another_strategy.extrac_content(url)
-        # links = driver.find_elements(By.TAG_NAME, 'a')
-        # for link in links:
-        #
-        #     href = link.get_attribute('href')
-        #     if 'oferta-academica' in (href):
-        #         print("encontre oferta academica")
-        #         self.another_strategy.extrac_content(content)
-        #     text = link.text
-        #     print(f"Texto: {text} - URL: {href}")
-        #
-        # print("Extract dIVC")//
+        return url
 
 
 class ExtractKnowledgeAreaStrategy(ExtractStrategy):
@@ -81,7 +69,6 @@ class ExtractKnowledgeAreaStrategy(ExtractStrategy):
         name_area = (driver.find_element(By.CSS_SELECTOR, 'p.text-primary.text-start.fw-light.fs-5')
                      .text.replace('(ver oferta)', '').strip())
 
-        settings.logger.info('Logging configured')
         p_label = driver.find_element(By.CSS_SELECTOR, 'p.text-normal.text-justify.fs-6.fw-light.lh-lg')
         all_text_split = self.extract_ul_content() if self.extract_ul_content() else p_label.text.split('\n')
         description_text = p_label.text.split('\n')[0]
@@ -123,44 +110,88 @@ class ExtractKnowledgeAreaStrategy(ExtractStrategy):
 
 class ExtractAcademicOfferStrategy(ExtractStrategy):
 
-    def extrac_content(self, data):
+    def extrac_content(self, link):
 
         """
         LOGICA PARA EXTRAER LA INFORMACION DE LA OFERTA ACADEMICA
         """
         area = False
+        university = False
+        university_exists = False
         find_detail_knowledge_area_flag = False
-        driver.get(data)
+        driver.get(link)
         container = driver.find_element(By.ID, 'list-tab-pane')
         links = container.find_elements(By.TAG_NAME, 'a')
         for links in links:
             href = links.get_attribute('href')
-            if 'detalle-area-conocimiento' in href and not find_detail_knowledge_area_flag:
+
+            if 'detalle-ieu' in href:
+                university_exists = session.query(UniversityInstitute).filter(
+                    UniversityInstitute.university_name == links.text.replace('(GESTIÓN PÚBLICA)', '').strip()).first()
+                if not university_exists:
+                    university = UniversityInstitute(
+                        university_name=re.sub(r'\(GESTIÓN PÚBLICA\)|\(GESTIÓN PRIVADA\)', '', links.text).strip()
+                    )
+                    session.add(university)
+                    session.commit()
+
+            if 'detalle-area-conocimiento' in href:
                 find_detail_knowledge_area_flag = True
                 text = links.text
                 from data.models.knowledge_area import KnowledgeAreas
                 area = session.query(KnowledgeAreas).filter(KnowledgeAreas.name == text).first()
-                if not area:
-                    continue
+
+                if area and university:
+                    # Crear la relación muchos a muchos si el área de conocimiento y la universidad existen
+                    if university not in area.universities:
+                        area.universities.append(university)
+                        session.commit()
+                if university_exists:
+
+                    if university_exists not in area.universities:
+                        area.universities.append(university_exists)
+                        session.commit()
+
             if 'detalle-programa' in href and find_detail_knowledge_area_flag:
                 text = links.text.split(' - ')[1]
                 from data.models.knowledge_area import AcademicPrograms
                 academic_area_exist = session.query(AcademicPrograms).filter(AcademicPrograms.name == text).first()
-                if academic_area_exist:
-                    continue
-                program = AcademicPrograms(
-                    name=text,
-                    KnowledgeAreas_id=area.id,
-                    knowledge_area=area
-                )
-                session.add(program)
+                if not academic_area_exist:
+
+                    program = AcademicPrograms(
+                        name=text,
+                        KnowledgeAreas_id=area.id,
+                        knowledge_area=area
+                    )
+                    if university and not university_exists:
+                        if program not in university.academic_programs:
+                            university.academic_programs.append(program)
+                        session.add(program)
+                        session.commit()
+                    if university_exists:
+                        if program not in university_exists.academic_programs:
+                            university_exists.academic_programs.append(program)
+                        session.add(program)
+                        session.commit()
+                    session.commit()
+                else:
+
+                    if university and not university_exists:
+                        if academic_area_exist not in university.academic_programs:
+                            university.academic_programs.append(academic_area_exist)
+                        session.add(academic_area_exist)
+                        session.commit()
+                    if university_exists:
+                        if academic_area_exist not in university_exists.academic_programs:
+                            university_exists.academic_programs.append(academic_area_exist)
+                        session.add(academic_area_exist)
+                        session.commit()
 
                 print(f"Texto: {text} - URL: {href}")
         """
         FIN LOGICA PARA EXTRAER LA INFORMACION DE LA OFERTA ACADEMICA
         """
-        session.commit()
         if self.another_strategy:
-            self.another_strategy.extrac_content(data)
+            self.another_strategy.extrac_content(link)
 
         pass
