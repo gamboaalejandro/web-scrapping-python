@@ -73,24 +73,24 @@ class ExtractKnowledgeAreaStrategy(ExtractStrategy):
         all_text_split = self.extract_ul_content() if self.extract_ul_content() else p_label.text.split('\n')
         description_text = p_label.text.split('\n')[0]
         from data.models.knowledge_area import KnowledgeAreas
-        if session.query(KnowledgeAreas).filter(KnowledgeAreas.name == name_area).first():
-            return
-        knowledge_area = KnowledgeAreas(
-            name=name_area,
-            description=description_text
-        )
-        session.add(knowledge_area)
-        for p in all_text_split:
-            if '-' in p:
-                from data.models.knowledge_area import SkillsForKnowledgeAreas
-                skill = SkillsForKnowledgeAreas(
-                    name=p,
-                    knowledge_area_id=knowledge_area.id,
-                    knowledge_area=knowledge_area
-                )
-                session.add(skill)
+        if not session.query(KnowledgeAreas).filter(KnowledgeAreas.name == name_area).first():
 
-        session.commit()
+            knowledge_area = KnowledgeAreas(
+                name=name_area,
+                description=description_text
+            )
+            session.add(knowledge_area)
+            for p in all_text_split:
+                if '-' in p:
+                    from data.models.knowledge_area import SkillsForKnowledgeAreas
+                    skill = SkillsForKnowledgeAreas(
+                        name=p,
+                        knowledge_area_id=knowledge_area.id,
+                        knowledge_area=knowledge_area
+                    )
+                    session.add(skill)
+
+            session.commit()
         """
         FIN LOGICA PARA EXTRAER LA INFORMACION DEL AREA DE CONOCIMIENTO
         """

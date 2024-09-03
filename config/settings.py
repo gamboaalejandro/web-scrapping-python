@@ -39,8 +39,6 @@ LOGGING_CONFIG = {
 WEB_BASE_URL_PUBLIC = 'https://loeu.opsu.gob.ve/oferta-academica/?dep_admin=P%C3%9ABLICA&programa='
 WEB_BASE_URL_PRIVATE = 'https://loeu.opsu.gob.ve/oferta-academica/?dep_admin=PRIVADA&programa='
 
-WEB_URL_KNOWLEDGES = 'https://loeu.opsu.gob.ve/area-conocimiento/'
-
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
 logger.info('Logging configured')
