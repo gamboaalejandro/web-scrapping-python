@@ -1,8 +1,9 @@
 # This is a sample Python script.
 from config import settings
 from data.models.database import DatabaseConnection
-from scripts.scrapper import ChromeScrapper, UrlContentExtractionStrategy, \
-    ExtractKnowledgeAreaStrategy, ExtractAcademicOfferStrategy, ExtractContentFromALabelStrategy
+from scripts.scrapper import ChromeScrapper, UrlDetailAreaExtractionStrategy, \
+    ExtractKnowledgeAreaStrategy, ExtractAcademicOfferStrategy, ExtractContentFromALabelStrategy, \
+    ExtractURLAcademicProgramsStrategy, ExtractAcademicProgramDescriptionStrategy
 
 # Press Ctrl+F5 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
@@ -12,27 +13,18 @@ db = DatabaseConnection()
 
 session = db.get_session()
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press F9 to toggle the breakpoint.
-    settings.logger.info('Logging configured')
-
-
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
-    scrapper = ChromeScrapper(UrlContentExtractionStrategy(
-        ExtractContentFromALabelStrategy(
-            ExtractKnowledgeAreaStrategy(
-                ExtractAcademicOfferStrategy(False))
-        )
-
+    scrapper = ChromeScrapper(UrlDetailAreaExtractionStrategy(
+            ExtractKnowledgeAreaStrategy(ExtractAcademicOfferStrategy(False))
     ))
 
-    #record = session.query(UniversityInstitute).all()
-    session.commit()
-    # scrapper.scraper(settings.WEB_BASE_URL_PUBLIC)
-    scrapper.scraper(settings.WEB_BASE_URL_PRIVATE)
-    print(data)
+    scrapping_academic_program = ChromeScrapper(
+        ExtractURLAcademicProgramsStrategy(
+            ExtractAcademicProgramDescriptionStrategy(False)
+        ))
+    #scrapper.scraper(settings.WEB_BASE_URL_PRIVATE)
+    #scrapper.scraper(settings.WEB_BASE_URL_PUBLIC)
+    scrapping_academic_program.scraper(settings.WEB_BASE_URL_PUBLIC)
+
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/

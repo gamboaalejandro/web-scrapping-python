@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import Column,ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from data.models.university_institute import university_knowledge_association, university_academic_program_association
+from data.models.university_institute import university_knowledge_association
 from data.models.database import Base
 
 """
@@ -47,13 +47,7 @@ class AcademicPrograms(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     name = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
     KnowledgeAreas_id = Column(UUID(as_uuid=True), ForeignKey('knowledge_area.id'))
     knowledge_area = relationship("KnowledgeAreas", back_populates="academic_program")
-
-    academic_universities = relationship(
-        'UniversityInstitute',
-        secondary=university_academic_program_association,
-        back_populates='academic_programs'
-    )
-
 

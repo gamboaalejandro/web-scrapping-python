@@ -18,14 +18,6 @@ university_knowledge_association = Table(
 )
 
 
-university_academic_program_association = Table(
-    'university_academic_program_association', Base.metadata,
-    Column('university_id', UUID(as_uuid=True), ForeignKey('University.id'), primary_key=True),
-    Column('academic_program_id', UUID(as_uuid=True), ForeignKey('academic_program.id'), primary_key=True)
-)
-
-
-
 class UniversityInstitute(Base):
     #better name for tablename
     __tablename__ = 'University'
@@ -39,8 +31,3 @@ class UniversityInstitute(Base):
         back_populates='universities'
     )
 
-    academic_programs = relationship(
-        'AcademicPrograms',
-        secondary=university_academic_program_association,
-        back_populates='academic_universities'
-    )
